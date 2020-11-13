@@ -1,6 +1,6 @@
-use std::{fs, path};
 use std::io::Read;
 use std::path::Path;
+use std::{fs, path};
 
 const OUTPUT_DIR: &str = "ton_api/src/ton";
 const TL_DIR: &str = "ton_api/tl";
@@ -19,9 +19,7 @@ fn main() {
         if input.len() > 0 {
             input += "---types---\n";
         }
-        fs::File::open(&file).unwrap()
-            .read_to_string(&mut input).unwrap();
+        fs::File::open(&file).unwrap().read_to_string(&mut input).unwrap();
     }
     ton_tl_codegen::generate_code_for(&input, Path::new(OUTPUT_DIR));
 }
-

@@ -1,12 +1,12 @@
 #![allow(clippy::unreadable_literal)]
 #![deny(private_in_public)]
 
-use std::{fmt, io};
 use std::any::Any;
 use std::cmp::Ordering;
 use std::convert::TryInto;
 use std::fmt::{Display, Formatter};
 use std::hash::Hash;
+use std::{fmt, io};
 
 use erased_serde::serialize_trait_object;
 use failure::Fail;
@@ -20,13 +20,17 @@ use crate::ton::ton_node::blockidext::BlockIdExt;
 
 macro_rules! _invalid_id {
     ($id:ident) => {
-        Err(crate::InvalidConstructor { expected: Self::possible_constructors(), received: $id }.into())
+        Err(crate::InvalidConstructor {
+            expected: Self::possible_constructors(),
+            received: $id,
+        }
+        .into())
     };
 }
 
+pub mod secure;
 #[allow(non_camel_case_types)]
 pub mod ton;
-pub mod secure;
 mod ton_prelude;
 
 /// Struct representing TL constructor number (CRC32 calculated from constructor definition string)
@@ -92,7 +96,8 @@ impl<'r> io::Read for Deserializer<'r> {
 
 /// Trait for bare type deserialization
 pub trait BareDeserialize
-where Self: Sized,
+where
+    Self: Sized,
 {
     /// Read bare-serialized value using `Deserializer`
     fn deserialize_bare(de: &mut Deserializer) -> Result<Self>;
@@ -105,7 +110,8 @@ where Self: Sized,
 
 /// Trait for boxed type deserialization
 pub trait BoxedDeserialize
-where Self: Sized,
+where
+    Self: Sized,
 {
     /// Returns all possible constructors of boxed type
     fn possible_constructors() -> Vec<ConstructorNumber>;
@@ -125,18 +131,22 @@ pub trait BoxedDeserializeDynamic: BoxedDeserialize + for<'de> serde::Deserializ
     fn boxed_deserialize_to_box(id: ConstructorNumber, de: &mut Deserializer) -> Result<ton::TLObject>;
 
     /// Read boxed type value using `serde::Deserializer`
-    fn serde_deserialize_to_box(de: &mut dyn erased_serde::Deserializer) -> ::std::result::Result<ton::TLObject, erased_serde::Error>;
+    fn serde_deserialize_to_box(
+        de: &mut dyn erased_serde::Deserializer,
+    ) -> ::std::result::Result<ton::TLObject, erased_serde::Error>;
 }
 
 impl<D> BoxedDeserializeDynamic for D
-where D: BoxedDeserialize + for<'de> serde::Deserialize<'de> + AnyBoxedSerialize,
+where
+    D: BoxedDeserialize + for<'de> serde::Deserialize<'de> + AnyBoxedSerialize,
 {
     fn boxed_deserialize_to_box(id: ConstructorNumber, de: &mut Deserializer) -> Result<ton::TLObject> {
         Ok(ton::TLObject::new(D::deserialize_boxed(id, de)?))
     }
 
-    fn serde_deserialize_to_box(de: &mut dyn erased_serde::Deserializer) -> ::std::result::Result<ton::TLObject, erased_serde::Error>
-    {
+    fn serde_deserialize_to_box(
+        de: &mut dyn erased_serde::Deserializer,
+    ) -> ::std::result::Result<ton::TLObject, erased_serde::Error> {
         Ok(ton::TLObject::new(erased_serde::deserialize::<D>(de)?))
     }
 }
@@ -219,7 +229,7 @@ pub trait BareSerialize {
 
 /// Trait for boxed type serialization
 pub trait BoxedSerialize {
-    /// Represent boxed type value as `ConstructorNumber` and `BareSerialize` tuple 
+    /// Represent boxed type value as `ConstructorNumber` and `BareSerialize` tuple
     fn serialize_boxed(&self) -> (ConstructorNumber, &dyn BareSerialize);
 
     /// Serialize boxed type value into `Vec<u8>`
@@ -243,8 +253,12 @@ pub trait AnyBoxedSerialize: Any + Send + Sync + BoxedSerialize + erased_serde::
 }
 
 impl<T: Any + Send + Sync + BoxedSerialize + erased_serde::Serialize> AnyBoxedSerialize for T {
-    fn as_any(&self) -> &dyn Any { self }
-    fn into_boxed_any(self: Box<Self>) -> Box<dyn Any + Send> { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn into_boxed_any(self: Box<Self>) -> Box<dyn Any + Send> {
+        self
+    }
 }
 
 serialize_trait_object!(AnyBoxedSerialize);
@@ -262,7 +276,8 @@ impl PartialOrd for BlockIdExt {
 
 impl Ord for BlockIdExt {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.workchain.cmp(&other.workchain)
+        self.workchain
+            .cmp(&other.workchain)
             .then(self.shard.cmp(&other.shard))
             .then(self.seqno.cmp(&other.seqno))
             .then(self.root_hash.cmp(&other.root_hash))
@@ -272,7 +287,15 @@ impl Ord for BlockIdExt {
 
 impl Display for BlockIdExt {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "({}:{:016x}, {}, rh {}, fh {})", self.workchain, self.shard, self.seqno, hex::encode(self.root_hash.0), hex::encode(self.file_hash.0))
+        write!(
+            f,
+            "({}:{:016x}, {}, rh {}, fh {})",
+            self.workchain,
+            self.shard,
+            self.seqno,
+            hex::encode(self.root_hash.0),
+            hex::encode(self.file_hash.0)
+        )
     }
 }
 

@@ -12,8 +12,11 @@ use rand::{Rand, Rng};
 use serde;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{AnyBoxedSerialize, BareDeserialize, BareSerialize, BoxedDeserialize, BoxedSerialize, ConstructorNumber, Deserializer, Result, Serializer};
 use crate::ton::Bool;
+use crate::{
+    AnyBoxedSerialize, BareDeserialize, BareSerialize, BoxedDeserialize, BoxedSerialize, ConstructorNumber,
+    Deserializer, Result, Serializer,
+};
 
 const MAX_BYTES_DEBUG_LEN: usize = 4;
 
@@ -179,10 +182,12 @@ impl BoxedSerialize for TLObject {
 
 impl serde::Serialize for TLObject {
     fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
-        where S: serde::Serializer,
+    where
+        S: serde::Serializer,
     {
         let (id, _) = self.0.serialize_boxed();
-        let tl_type_name = crate::ton::dynamic::BY_NUMBER.get(&id)
+        let tl_type_name = crate::ton::dynamic::BY_NUMBER
+            .get(&id)
             .map(|dynamic| dynamic.type_name)
             .unwrap_or(&"<bogus>");
         serializer.serialize_newtype_variant("TLObject", id.0, tl_type_name, &self.0)
@@ -199,7 +204,8 @@ impl<T> From<T> for LengthPrefixed<T> {
 }
 
 impl<T> BareDeserialize for LengthPrefixed<T>
-    where T: BoxedDeserialize,
+where
+    T: BoxedDeserialize,
 {
     fn deserialize_bare(de: &mut Deserializer) -> Result<Self> {
         let len = de.read_i32::<LittleEndian>()? as usize;
@@ -210,7 +216,8 @@ impl<T> BareDeserialize for LengthPrefixed<T>
 }
 
 impl<T> BareSerialize for LengthPrefixed<T>
-    where T: BoxedSerialize,
+where
+    T: BoxedSerialize,
 {
     fn serialize_bare(&self, ser: &mut Serializer) -> Result<()> {
         let inner = self.0.boxed_serialized_bytes()?;
@@ -228,7 +235,11 @@ impl BareSerialize for () {
 
 impl From<bool> for &'static Bool {
     fn from(b: bool) -> Self {
-        if b { &Bool::BoolTrue } else { &Bool::BoolFalse }
+        if b {
+            &Bool::BoolTrue
+        } else {
+            &Bool::BoolFalse
+        }
     }
 }
 
@@ -280,7 +291,8 @@ impl BareSerialize for String {
 }
 
 impl<T> BoxedDeserialize for Box<T>
-    where T: BoxedDeserialize,
+where
+    T: BoxedDeserialize,
 {
     fn possible_constructors() -> Vec<ConstructorNumber> {
         T::possible_constructors()
@@ -292,7 +304,8 @@ impl<T> BoxedDeserialize for Box<T>
 }
 
 impl<T> BoxedSerialize for Box<T>
-    where T: BoxedSerialize,
+where
+    T: BoxedSerialize,
 {
     fn serialize_boxed(&self) -> (ConstructorNumber, &dyn BareSerialize) {
         T::serialize_boxed(self)
@@ -302,7 +315,7 @@ impl<T> BoxedSerialize for Box<T>
 /// Base enumeration for any bare type. Used as vectors type parameter.
 #[derive(PartialEq, Hash)]
 pub enum Bare {
-    None
+    None,
 }
 
 impl Default for Bare {
@@ -314,7 +327,7 @@ impl Default for Bare {
 /// Base enumeration for any boxed type. Used as vectors type parameter.
 #[derive(PartialEq, Hash)]
 pub enum Boxed {
-    None
+    None,
 }
 
 impl Default for Boxed {
@@ -328,7 +341,8 @@ pub struct Vector<Det, T>(pub Vec<T>, PhantomData<fn() -> Det>);
 pub type vector<Det, T> = Vector<Det, T>;
 
 impl<Det, T> Clone for Vector<Det, T>
-    where T: Clone,
+where
+    T: Clone,
 {
     fn clone(&self) -> Self {
         Vector(self.0.clone(), PhantomData)
@@ -336,20 +350,21 @@ impl<Det, T> Clone for Vector<Det, T>
 }
 
 impl<Det, T> fmt::Debug for Vector<Det, T>
-    where T: fmt::Debug,
+where
+    T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("Vector")
-            .field(&self.0)
-            .finish()
+        f.debug_tuple("Vector").field(&self.0).finish()
     }
 }
 
 impl<Det, T> serde::Serialize for Vector<Det, T>
-    where T: serde::Serialize,
+where
+    T: serde::Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
-        where S: serde::Serializer,
+    where
+        S: serde::Serializer,
     {
         use serde::ser::SerializeSeq;
         let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
@@ -361,10 +376,12 @@ impl<Det, T> serde::Serialize for Vector<Det, T>
 }
 
 impl<'de, Det, T> serde::Deserialize<'de> for Vector<Det, T>
-    where T: serde::Deserialize<'de>,
+where
+    T: serde::Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
-        where D: serde::Deserializer<'de>,
+    where
+        D: serde::Deserializer<'de>,
     {
         Ok(Vector(serde::Deserialize::deserialize(deserializer)?, PhantomData))
     }
@@ -374,7 +391,6 @@ const VECTOR_CONSTRUCTOR: ConstructorNumber = ConstructorNumber(0x1cb5c415);
 
 macro_rules! impl_vector {
     ($det:ident, $det_de:ident, $det_ser:ident, $read_method:ident, $write_method:ident) => {
-
         impl<T> From<Vec<T>> for Vector<$det, T> {
             fn from(obj: Vec<T>) -> Self {
                 Vector(obj, PhantomData)
@@ -383,15 +399,20 @@ macro_rules! impl_vector {
 
         impl<T> ::std::ops::Deref for Vector<$det, T> {
             type Target = [T];
-            fn deref(&self) -> &[T] { &self.0 }
+            fn deref(&self) -> &[T] {
+                &self.0
+            }
         }
 
         impl<T> ::std::ops::DerefMut for Vector<$det, T> {
-            fn deref_mut(&mut self) -> &mut [T] { &mut self.0 }
+            fn deref_mut(&mut self) -> &mut [T] {
+                &mut self.0
+            }
         }
 
         impl<T> BareDeserialize for Vector<$det, T>
-            where T: $det_de,
+        where
+            T: $det_de,
         {
             fn deserialize_bare(de: &mut Deserializer) -> Result<Self> {
                 let count = de.read_i32::<LittleEndian>()?;
@@ -404,9 +425,12 @@ macro_rules! impl_vector {
         }
 
         impl<T> BoxedDeserialize for Vector<$det, T>
-            where Self: BareDeserialize,
+        where
+            Self: BareDeserialize,
         {
-            fn possible_constructors() -> Vec<ConstructorNumber> { vec![VECTOR_CONSTRUCTOR] }
+            fn possible_constructors() -> Vec<ConstructorNumber> {
+                vec![VECTOR_CONSTRUCTOR]
+            }
 
             fn deserialize_boxed(id: ConstructorNumber, de: &mut Deserializer) -> Result<Self> {
                 assert_eq!(id, VECTOR_CONSTRUCTOR);
@@ -415,7 +439,8 @@ macro_rules! impl_vector {
         }
 
         impl<T> BareSerialize for Vector<$det, T>
-            where T: $det_ser,
+        where
+            T: $det_ser,
         {
             fn serialize_bare(&self, ser: &mut Serializer) -> Result<()> {
                 ser.write_i32::<LittleEndian>(self.0.len() as i32)?;
@@ -427,14 +452,14 @@ macro_rules! impl_vector {
         }
 
         impl<T> BoxedSerialize for Vector<$det, T>
-            where Self: BareSerialize,
+        where
+            Self: BareSerialize,
         {
             fn serialize_boxed(&self) -> (ConstructorNumber, &dyn BareSerialize) {
                 (VECTOR_CONSTRUCTOR, self)
             }
         }
-
-    }
+    };
 }
 
 impl_vector! { Bare, BareDeserialize, BareSerialize, read_bare, write_bare }
@@ -500,7 +525,7 @@ macro_rules! impl_tl_primitive {
                 Ok(())
             }
         }
-    }
+    };
 }
 
 impl_tl_primitive! { int, i32, read_i32, write_i32 }

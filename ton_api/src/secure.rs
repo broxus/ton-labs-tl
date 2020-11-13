@@ -63,8 +63,7 @@ impl BareSerialize for SecureBytes {
 
 impl BareDeserialize for SecureBytes {
     fn deserialize_bare(de: &mut crate::Deserializer) -> crate::Result<Self> {
-        Vec::<u8>::deserialize_bare(de)
-            .map(|vec| SecureBytes(SecVec::<u8>::new(vec)))
+        Vec::<u8>::deserialize_bare(de).map(|vec| SecureBytes(SecVec::<u8>::new(vec)))
     }
 }
 
