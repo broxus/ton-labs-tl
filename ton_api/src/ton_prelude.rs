@@ -9,8 +9,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use extfmt::Hexlify;
 use ordered_float::OrderedFloat;
 use rand::{Rand, Rng};
-use serde;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::ton::Bool;
 use crate::{

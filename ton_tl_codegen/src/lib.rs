@@ -1,4 +1,5 @@
 #![deny(private_in_public, unused_extern_crates)]
+#![allow(clippy::type_complexity)]
 #![recursion_limit = "128"]
 
 use std::borrow::Cow;
@@ -101,7 +102,7 @@ pub mod parser {
         pub fn flag_field(&self) -> Option<(String, u32)> {
             use self::Type::*;
             match self {
-                &Flagged(ref f, b, _) => Some((f.clone(), b)),
+                Flagged(f, b, _) => Some((f.clone(), *b)),
                 _ => None,
             }
         }
@@ -109,7 +110,7 @@ pub mod parser {
         pub fn is_type_parameter(&self) -> bool {
             use self::Type::*;
             match self {
-                &TypeParameter(..) => true,
+                TypeParameter(..) => true,
                 _ => false,
             }
         }
@@ -220,8 +221,8 @@ pub mod parser {
     }
 
     fn ty() -> Parser<u8, Type> {
-        sym(b'#').map(|_| Type::Int)
-            | sym(b'!') * ident().map(Type::TypeParameter)
+        (sym(b'#').map(|_| Type::Int))
+            | (sym(b'!') * ident().map(Type::TypeParameter))
             | ty_flag()
             | ty_generic()
             | dotted_ident().map(Type::Named)
@@ -259,8 +260,8 @@ pub mod parser {
     }
 
     fn fields() -> Parser<u8, (Vec<Field>, Vec<Field>)> {
-        (simple_space().opt() * sym(b'?')).map(|_| (vec![], vec![]))
-            | (simple_space() * ty_param_field()).repeat(0..) + base_fields()
+        ((simple_space().opt() * sym(b'?')).map(|_| (vec![], vec![])))
+            | ((simple_space() * ty_param_field()).repeat(0..) + base_fields())
     }
 
     fn output_and_matched<T: 'static>(inner: Parser<u8, T>) -> Parser<u8, Matched<T>> {
@@ -377,7 +378,7 @@ pub mod parser {
                 .iter()
                 .cloned()
                 .map(|mut s| {
-                    &mut s[..1].make_ascii_uppercase();
+                    s[..1].make_ascii_uppercase();
                     s
                 })
                 .collect()
@@ -389,10 +390,9 @@ pub mod parser {
                 .iter()
                 .zip(&other.0)
                 .enumerate()
-                .skip_while(|&(_, (a, b))| a == b)
-                .next()
+                .find(|&(_, (a, b))| a != b)
                 .map(|(e, _)| e)
-                .unwrap_or(self.0.len().min(other.0.len()));
+                .unwrap_or_else(|| self.0.len().min(other.0.len()));
             NameChunks((&self.0[..index]).to_vec())
         }
 
@@ -430,17 +430,16 @@ fn write_to_file(contents: String, filename: &Path, append: bool) {
     let mut options = OpenOptions::new();
     options.create(true).write(true).truncate(!append).append(append);
 
-    let mut file = options.open(filename).expect(
-        format!(
+    let mut file = options.open(filename).unwrap_or_else(|_| {
+        panic!(
             "Unable to open file <{filename}> with the given parameters: {options:?}",
             filename = filename.to_string_lossy(),
             options = options
         )
-        .as_str(),
-    );
+    });
 
     file.write_all(contents.as_bytes())
-        .expect(format!("Unable to write contents into the file: {}", filename.to_string_lossy()).as_str());
+        .unwrap_or_else(|_| panic!("Unable to write contents into the file: {}", filename.to_string_lossy()))
 }
 
 fn reformat(filename: &Path) {
@@ -494,7 +493,7 @@ impl Namespace {
             NamespaceItem::AsFunction(ref cm) => cm.0.as_function_struct(&cm.1),
             NamespaceItem::AnotherNamespace(ref ns) => {
                 let prelude = quote! {
-                    use serde_derive::{Serialize, Deserialize};
+                    use serde::{Deserialize, Serialize};
                 }
                 .to_string();
                 let (filename, _dir) = ns.print_rust(Some(prelude), path.join(name.to_string()).as_path(), false);
@@ -515,11 +514,11 @@ impl Namespace {
 
         let dir = filename
             .parent()
-            .expect(format!("Unable to get parent directory for: {}", filename.to_string_lossy()).as_str())
+            .unwrap_or_else(|| panic!("Unable to get parent directory for: {}", filename.to_string_lossy()))
             .to_path_buf();
 
         std::fs::create_dir_all(&dir)
-            .expect(format!("Unable to create directory: {}", filename.to_string_lossy()).as_str());
+            .unwrap_or_else(|_| panic!("Unable to create directory: {}", filename.to_string_lossy()));
 
         let write_prelude = if let Some(prelude) = prelude {
             write_to_file(prelude, &filename, append);
@@ -595,7 +594,7 @@ fn filter_items(iv: &mut Vec<Matched<Item>>) {
 
     iv.retain(|&Matched(ref i, _)| {
         let c = match i {
-            &Item::Constructor(ref c) => c,
+            Item::Constructor(c) => c,
             _ => return true,
         };
         // Blacklist some annoying inconsistencies.
@@ -638,7 +637,7 @@ impl AllConstructors {
             }
         }
         let mut resolve_map: TypeResolutionMap = Default::default();
-        for (_, cs) in &mut constructors_tree {
+        for cs in constructors_tree.values_mut() {
             let base_ns = cs.first_constructor().output.namespaces().to_vec();
             cs.fix_names(&base_ns, &mut resolve_map);
         }
@@ -787,7 +786,7 @@ impl TypeName {
 fn to_snake_case(ident: &str) -> String {
     let mut result = String::new();
     for c in ident.chars() {
-        if c.is_ascii_uppercase() && result.len() > 0 {
+        if c.is_ascii_uppercase() && !result.is_empty() {
             result.push_str(format!("_{}", c.to_ascii_lowercase()).as_str());
         } else {
             result.push(c.to_ascii_lowercase());
@@ -808,7 +807,7 @@ where
         let mut idents = vec![];
         let mut iter = iter.into_iter();
         if let Some(mut last_segment) = iter.next() {
-            while let Some(segment) = iter.next() {
+            for segment in iter {
                 let ident = no_conflict_ident(to_snake_case(last_segment.as_ref()).as_str());
                 idents.push(ident);
                 last_segment = segment;
@@ -840,7 +839,7 @@ enum WireKind {
 }
 
 fn is_first_char_lowercase(s: &str) -> bool {
-    s.chars().next().map(char::is_lowercase).unwrap_or(false)
+    s.chars().next().map(char::is_lowercase).unwrap_or_else(|| false)
 }
 
 impl WireKind {
@@ -936,7 +935,7 @@ impl WireKind {
     fn opt_names_slice(&self) -> Option<&[syn::Ident]> {
         use self::WireKind::*;
         match *self {
-            Bare(ref t) | Boxed(ref t) | ExtraDefault(ref t) => t.idents.as_ref().map(|v| v.as_slice()),
+            Bare(ref t) | Boxed(ref t) | ExtraDefault(ref t) => t.idents.as_deref(),
             _ => None,
         }
     }
@@ -1151,7 +1150,7 @@ impl TypeIR {
     }
 
     fn owned_names_vec(&self) -> Vec<syn::Ident> {
-        self.wire_kind.opt_names_slice().unwrap().iter().cloned().collect()
+        self.wire_kind.opt_names_slice().unwrap().to_vec()
     }
 
     fn name(&self) -> syn::Ident {
@@ -1229,7 +1228,7 @@ impl Type {
         use Type::*;
         match *self {
             Named(ref names) => match resolve_map.get(names) {
-                Some(ir) => return ir.clone(),
+                Some(ir) => ir.clone(),
                 None => TypeIR::from_names(names),
             },
             TypeParameter(ref name) => TypeIR::type_parameter(no_conflict_ident(name)),
@@ -1278,11 +1277,11 @@ impl Constructor<Type, Field> {
 
     fn is_output_a_type_parameter(&self) -> bool {
         let output_name = match &self.output {
-            &Type::Named(ref v) if v.len() == 1 => v[0].as_str(),
+            Type::Named(ref v) if v.len() == 1 => v[0].as_str(),
             _ => return false,
         };
         for p in &self.type_parameters {
-            if p.name.as_ref().map(String::as_str) == Some(output_name) {
+            if p.name.as_deref() == Some(output_name) {
                 return true;
             }
         }
@@ -1618,7 +1617,7 @@ impl Constructor<TypeIR, FieldIR> {
         if self.fields.is_empty() {
             quote!(=> (#tl_id, &()))
         } else {
-            quote!((ref x) => (#tl_id, x.as_ref()))
+            quote!((x) => (#tl_id, x.as_ref()))
         }
     }
 
@@ -1735,7 +1734,7 @@ impl Constructors<Type, Field> {
             .filter_map(|m| m.0.variant.name())
             .map(|n| NameChunks::from_name(n).unwrap())
             .fold(None, |a_opt: Option<NameChunks>, b| {
-                Some(a_opt.map(|a| a.common_prefix_of(&b)).unwrap_or(b))
+                Some(a_opt.map(|a| a.common_prefix_of(&b)).unwrap_or_else(|| b))
             })
             .unwrap_or_else(|| NameChunks(vec![]));
         let common_module = if common_prefix.0.is_empty() {
@@ -1814,7 +1813,7 @@ impl Constructors<TypeIR, FieldIR> {
             );
             let constructors = constructors.into_iter().map(|c| {
                 let cons_name = c.full_variant_name();
-                quote!(&#enum_name::#cons_name(ref x) => #value)
+                quote!(#enum_name::#cons_name(x) => #value)
             });
             let trailer = if exhaustive { quote!() } else { quote!(_ => None) };
             let ty = return_ir.field_reference_type();
@@ -1911,7 +1910,7 @@ impl Constructors<TypeIR, FieldIR> {
         let constructors = self.0.iter().map(|&Matched(ref c, _)| {
             let variant_name = c.full_variant_name();
             let serialize = c.as_variant_serialize_arm();
-            quote!(&#enum_name::#variant_name #serialize)
+            quote!(#enum_name::#variant_name #serialize)
         });
         quote! {
             match self {
@@ -2022,7 +2021,7 @@ pub fn generate_code_for(input: &str, path: &Path) {
         #![allow(bare_trait_objects, unused_variables, unused_imports, non_snake_case)]
         pub use crate::ton_prelude::*;
 
-        use serde_derive::{Serialize, Deserialize};
+        use serde::{Deserialize, Serialize};
 
         pub const LAYER: i32 = #layer;
     }

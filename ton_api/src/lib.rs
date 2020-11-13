@@ -1,4 +1,4 @@
-#![allow(clippy::unreadable_literal)]
+#![allow(clippy::unreadable_literal, clippy::len_without_is_empty, clippy::module_inception)]
 #![deny(private_in_public)]
 
 use std::any::Any;
@@ -10,13 +10,13 @@ use std::{fmt, io};
 
 use erased_serde::serialize_trait_object;
 use failure::Fail;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use ton_block::ShardIdent;
 pub use ton_types::Result;
 use ton_types::UInt256;
 
-use crate::ton::ton_node::blockidext::BlockIdExt;
+use crate::ton::ton::blockidext::BlockIdExt;
 
 macro_rules! _invalid_id {
     ($id:ident) => {
@@ -293,8 +293,8 @@ impl Display for BlockIdExt {
             self.workchain,
             self.shard,
             self.seqno,
-            hex::encode(self.root_hash.0),
-            hex::encode(self.file_hash.0)
+            hex::encode(&self.root_hash.0),
+            hex::encode(&self.file_hash.0)
         )
     }
 }
@@ -305,8 +305,8 @@ impl From<&ton_block::BlockIdExt> for BlockIdExt {
             workchain: block_id_ext.shard().workchain_id(),
             shard: block_id_ext.shard().shard_prefix_with_tag() as i64,
             seqno: block_id_ext.seq_no() as i32,
-            root_hash: block_id_ext.root_hash().into(),
-            file_hash: block_id_ext.file_hash().into(),
+            root_hash: ton::bytes(block_id_ext.root_hash().as_slice().to_vec()),
+            file_hash: ton::bytes(block_id_ext.file_hash().as_slice().to_vec()),
         }
     }
 }
@@ -324,8 +324,8 @@ impl TryInto<ton_block::BlockIdExt> for &BlockIdExt {
         Ok(ton_block::BlockIdExt::with_params(
             ShardIdent::with_tagged_prefix(self.workchain, self.shard as u64)?,
             self.seqno as u32,
-            self.root_hash.into(),
-            self.file_hash.into(),
+            self.root_hash.0.as_slice().into(),
+            self.file_hash.0.as_slice().into(),
         ))
     }
 }

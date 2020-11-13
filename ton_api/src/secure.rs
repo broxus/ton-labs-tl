@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 
 use ::secstr::*;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{BareDeserialize, BareSerialize};
 
@@ -49,6 +49,7 @@ impl Display for SecureBytes {
     }
 }
 
+#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for SecureBytes {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.unsecure().hash(state);

@@ -9,7 +9,7 @@ secureString = SecureString;
 secureBytes = SecureBytes;
 
 object ? = Object;
-function ? = Function;
+//function ? = Function;
 
 boolFalse = Bool;
 boolTrue = Bool;
@@ -145,7 +145,7 @@ ftabi.valueBytes param:ftabi.Param value:bytes = ftabi.Value;
 ftabi.valueGram param:ftabi.Param value:int64 = ftabi.Value;
 ftabi.valueTime param:ftabi.Param value:int64 = ftabi.Value;
 ftabi.valueExpire param:ftabi.Param value:int32 = ftabi.Value;
-ftabi.valuePublicKey param:ftabi.Param value:SecureString = ftabi.Value;
+ftabi.valuePublicKey param:ftabi.Param value:secureString = ftabi.Value;
 
 ftabi.namedParam name:string param:ftabi.Param = ftabi.NamedParam;
 ftabi.namedValue name:string value:ftabi.Value = ftabi.NamedValue;
@@ -837,7 +837,7 @@ pchan.unpackPromise data:secureBytes = pchan.Promise;
 onLiteServerQueryResult id:int64 bytes:bytes = Ok;
 onLiteServerQueryError id:int64 error:error = Ok;
 
-withBlock id:ton.blockIdExt function:Function = Object;
+//withBlock id:ton.blockIdExt function:Function = Object;
 
 runTests dir:string = Ok;
 
