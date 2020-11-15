@@ -36,6 +36,8 @@ exportedPemKey pem:secureString = ExportedPemKey;
 exportedEncryptedKey data:secureBytes = ExportedEncryptedKey;
 exportedUnencryptedKey data:secureBytes = ExportedUnencryptedKey;
 
+keyPair public_key:bytes private_key:secureBytes mnemonic:vector<secureString> = KeyPair;
+
 bip39Hints words:vector<string> = Bip39Hints;
 
 adnlAddress adnl_address:string = AdnlAddress;
@@ -562,14 +564,18 @@ liteServer.accountStateUninit = liteServer.AccountState;
 //@param key    int256
 liteServer.simpleLib key:bytes is_public:Bool root:bytes  = liteServer.SimpleLib;
 liteServer.tickTock tick:Bool tock:Bool = liteServer.TickTock;
+//@param code_hash  int256
+//@param data_hash  int256
 liteServer.accountStateActive
     has_split_depth:Bool
     split_depth:int32
     special:liteServer.TickTock
     has_code:Bool
     code:bytes
+    code_hash:bytes
     has_data:Bool
     data:bytes
+    data_hash:bytes
     library:vector<liteServer.simpleLib> = liteServer.AccountState;
 //@param state_hash         int256
 liteServer.accountStateFrozen state_hash:bytes = liteServer.AccountState;
@@ -757,7 +763,7 @@ importEncryptedKey local_password:secureBytes key_password:secureBytes exported_
 importUnencryptedKey local_password:secureBytes  exported_unencrypted_key:exportedUnencryptedKey = Key;
 changeLocalPassword input_key:InputKey new_local_password:secureBytes = Key;
 
-generateKeyPair = Key;
+generateKeyPair word_count:int32 password:secureString entropy:secureString = KeyPair;
 
 encrypt decrypted_data:secureBytes secret:secureBytes = Data;
 decrypt encrypted_data:secureBytes secret:secureBytes = Data;
@@ -819,12 +825,7 @@ ftabi.createMessageBody function:ftabi.Function call:ftabi.FunctionCall = ftabi.
 ftabi.runLocal address:AccountAddress function:ftabi.Function call:ftabi.FunctionCall = ftabi.DecodedOutput;
 ftabi.decodeOutput function:ftabi.Function data:bytes = ftabi.DecodedOutput;
 ftabi.decodeInput function:ftabi.Function data:bytes internal:Bool = ftabi.DecodedInput;
-ftabi.generateStateInit tvc:bytes public_key:string = ftabi.StateInit;
-
-//ftabi.jsonCreateMessageBody abi_call:string = ftabi.MessageBody;
-//ftabi.jsonRunLocal address:AccountAddress abi_call:string = ftabi.JsonDecodedOutput;
-//ftabi.jsonDecodeOutput abi:string data:bytes = ftabi.JsonDecodedOutput;
-//ftabi.jsonDecodeInput abi:string data:bytes internal:Bool = ftabi.JsonDecodedInput;
+ftabi.generateStateInit tvc:bytes public_key:bytes = ftabi.StateInit;
 
 dns.resolve account_address:accountAddress name:string category:int32 ttl:int32 = dns.Resolved;
 
