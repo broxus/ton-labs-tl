@@ -8,9 +8,9 @@ use std::marker::PhantomData;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use extfmt::Hexlify;
 use ordered_float::OrderedFloat;
-use rand::{Rand, Rng};
-use serde;
-use serde_derive::{Deserialize, Serialize};
+use rand::distributions::{Distribution, Standard};
+use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 use crate::ton::Bool;
 use crate::{
@@ -48,9 +48,9 @@ macro_rules! impl_byteslike {
 
         impl_byteslike!(@common $ty);
 
-        impl Rand for $ty {
-            fn rand<R: Rng>(rng: &mut R) -> Self {
-                let mut ret: Self = Default::default();
+        impl Distribution<$ty> for Standard {
+            fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> $ty {
+                let mut ret: $ty = Default::default();
                 rng.fill_bytes(&mut ret.0);
                 ret
             }

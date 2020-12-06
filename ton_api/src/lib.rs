@@ -1,4 +1,4 @@
-#![allow(clippy::unreadable_literal)]
+#![allow(clippy::unreadable_literal, clippy::len_without_is_empty, clippy::module_inception)]
 #![deny(private_in_public)]
 
 use std::any::Any;
@@ -10,7 +10,7 @@ use std::{fmt, io};
 
 use erased_serde::serialize_trait_object;
 use failure::Fail;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use ton_block::ShardIdent;
 pub use ton_types::Result;
