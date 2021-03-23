@@ -7,6 +7,8 @@ const TL_DIR: &str = "tl";
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed={}", TL_DIR);
+
     let mut files = fs::read_dir(TL_DIR)
         .unwrap_or_else(|_| panic!("Unable to read directory contents: {}", TL_DIR))
         .filter_map(Result::ok)
