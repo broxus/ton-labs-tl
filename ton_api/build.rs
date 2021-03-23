@@ -6,9 +6,7 @@ const OUTPUT_DIR: &str = "src/ton";
 const TL_DIR: &str = "tl";
 
 fn main() {
-    println!("cargo:rerun-if-changed={}", OUTPUT_DIR);
-    println!("cargo:rerun-if-changed={}", TL_DIR);
-    println!("cargo:rerun-if-changed=../ton_tl_codegen");
+    println!("cargo:rerun-if-changed=build.rs");
     let mut files = fs::read_dir(TL_DIR)
         .unwrap_or_else(|_| panic!("Unable to read directory contents: {}", TL_DIR))
         .filter_map(Result::ok)
