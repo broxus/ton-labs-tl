@@ -19,6 +19,7 @@ tonNode.blockId workchain:int shard:long seqno:int = tonNode.BlockId;
 tonNode.blockIdExt workchain:int shard:long seqno:int root_hash:int256 file_hash:int256 = tonNode.BlockIdExt;
 tonNode.zeroStateIdExt workchain:int root_hash:int256 file_hash:int256 = tonNode.ZeroStateIdExt;
 
+tcp.pong random_id:long = tcp.Pong;
 adnl.pong value:long = adnl.Pong;
 
 adnl.message.answer query_id:int256 answer:bytes = adnl.Message;
@@ -58,6 +59,7 @@ liteServer.debug.verbosity value:int = liteServer.debug.Verbosity;
 
 ---functions---
 
+tcp.ping random_id:long = tcp.Pong;
 adnl.ping value:long = adnl.Pong;
 
 liteServer.getMasterchainInfo = liteServer.MasterchainInfo;
