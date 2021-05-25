@@ -1,6 +1,7 @@
 use std::io::Read;
 use std::path::Path;
 use std::{fs, path};
+use std::fs::DirEntry;
 
 const OUTPUT_DIR: &str = "src/ton";
 const TL_DIR: &str = "tl";
@@ -9,14 +10,30 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed={}", TL_DIR);
 
+    let mut allowed_files = Vec::<&'static str>::new();
+    allowed_files.push("shared.tl");
+    #[cfg(feature = "lite_api")]
+    allowed_files.push("lite_api.tl");
+    #[cfg(feature = "ton_api")]
+    allowed_files.push("ton_api.tl");
+
     let mut files = fs::read_dir(TL_DIR)
         .unwrap_or_else(|_| panic!("Unable to read directory contents: {}", TL_DIR))
         .filter_map(Result::ok)
-        .map(|d| d.path())
-        .filter(|path| path.to_str().unwrap().ends_with(".tl"))
+        .map(|d: DirEntry| d.path())
+        .filter(|path| {
+            if let Some(path) = path.file_name() {
+                let file_name = path.to_str().unwrap();
+                allowed_files.contains(&file_name)
+            } else {
+                false
+            }
+        })
         .collect::<Vec<path::PathBuf>>();
+
     assert!(!files.is_empty());
     files.sort();
+
     let mut input = String::new();
     for file in files {
         if !input.is_empty() {

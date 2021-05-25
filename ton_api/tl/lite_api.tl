@@ -19,14 +19,10 @@ tonNode.blockId workchain:int shard:long seqno:int = tonNode.BlockId;
 tonNode.blockIdExt workchain:int shard:long seqno:int root_hash:int256 file_hash:int256 = tonNode.BlockIdExt;
 tonNode.zeroStateIdExt workchain:int root_hash:int256 file_hash:int256 = tonNode.ZeroStateIdExt;
 
-tcp.pong random_id:long = tcp.Pong;
-adnl.pong value:long = adnl.Pong;
-
-adnl.message.answer query_id:int256 answer:bytes = adnl.Message;
 adnl.message.query query_id:int256 query:bytes = adnl.Message;
-adnl.message.custom data:bytes = adnl.Message;
+adnl.message.answer query_id:int256 answer:bytes = adnl.Message;
 
-liteServer.error code:int message:string = liteServer.Error; 
+liteServer.error code:int message:string = liteServer.Error;
 
 liteServer.accountId workchain:int id:int256 = liteServer.AccountId;
 
@@ -46,6 +42,7 @@ liteServer.transactionInfo id:tonNode.blockIdExt proof:bytes transaction:bytes =
 liteServer.transactionList ids:(vector tonNode.blockIdExt) transactions:bytes = liteServer.TransactionList;
 liteServer.transactionId mode:# account:mode.0?int256 lt:mode.1?long hash:mode.2?int256 = liteServer.TransactionId;
 liteServer.transactionId3 account:int256 lt:long = liteServer.TransactionId3;
+liteServer.transactionSearchResult sync_utime:long found:Bool lt:long hash:int256 = liteServer.TransactionSearchResult;
 liteServer.blockTransactions id:tonNode.blockIdExt req_count:# incomplete:Bool ids:(vector liteServer.transactionId) proof:bytes = liteServer.BlockTransactions;
 liteServer.signature node_id_short:int256 signature:bytes = liteServer.Signature;
 liteServer.signatureSet validator_set_hash:int catchain_seqno:int signatures:(vector liteServer.signature) = liteServer.SignatureSet;
@@ -59,9 +56,6 @@ liteServer.debug.verbosity value:int = liteServer.debug.Verbosity;
 
 ---functions---
 
-tcp.ping random_id:long = tcp.Pong;
-adnl.ping value:long = adnl.Pong;
-
 liteServer.getMasterchainInfo = liteServer.MasterchainInfo;
 liteServer.getMasterchainInfoExt mode:# = liteServer.MasterchainInfoExt;
 liteServer.getTime = liteServer.CurrentTime;
@@ -70,6 +64,7 @@ liteServer.getBlock id:tonNode.blockIdExt = liteServer.BlockData;
 liteServer.getState id:tonNode.blockIdExt = liteServer.BlockState;
 liteServer.getBlockHeader id:tonNode.blockIdExt mode:# = liteServer.BlockHeader;
 liteServer.sendMessage body:bytes = liteServer.SendMsgStatus;
+liteServer.findTransaction account:liteServer.accountId message_id:int256 after:long = liteServer.TransactionSearchResult;
 liteServer.getAccountState id:tonNode.blockIdExt account:liteServer.accountId = liteServer.AccountState;
 liteServer.runSmcMethod mode:# id:tonNode.blockIdExt account:liteServer.accountId method_id:long params:bytes = liteServer.RunMethodResult;
 liteServer.getShardInfo id:tonNode.blockIdExt workchain:int shard:long exact:Bool = liteServer.ShardInfo;
@@ -83,6 +78,6 @@ liteServer.getConfigAll mode:# id:tonNode.blockIdExt = liteServer.ConfigInfo;
 liteServer.getConfigParams mode:# id:tonNode.blockIdExt param_list:(vector int) = liteServer.ConfigInfo;
 liteServer.getValidatorStats#091a58bc mode:# id:tonNode.blockIdExt limit:int start_after:mode.0?int256 modified_after:mode.2?int = liteServer.ValidatorStats;
 
-liteServer.queryPrefix = Object; 
+liteServer.queryPrefix = Object;
 liteServer.query data:bytes = Object;
 liteServer.waitMasterchainSeqno seqno:int timeout_ms:int = Object; // query prefix

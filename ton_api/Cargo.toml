@@ -38,3 +38,8 @@ failure = "0.1.7"
 path = "../ton_tl_codegen"
 version = "0.0.1"
 features = []
+
+[features]
+default = ["lite_api"]
+lite_api = []
+ton_api = []
